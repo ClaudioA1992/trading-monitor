@@ -52,6 +52,44 @@ Si quieres binario Linux, debes compilar en Linux (build nativo):
 
 Nota: Windows y Linux requieren builds separados.
 
+### Dependencias de sistema en Linux (runtime)
+
+Para que funcionen correctamente `pystray` (icono de bandeja) y `pywebview`, instala dependencias del sistema antes de ejecutar o empaquetar.
+
+#### Ubuntu / Debian
+
+```bash
+sudo apt update
+sudo apt install -y \
+  python3-gi \
+  python3-gi-cairo \
+  gir1.2-gtk-3.0 \
+  gir1.2-appindicator3-0.1 \
+  libwebkit2gtk-4.0-37
+```
+
+#### Fedora
+
+```bash
+sudo dnf install -y \
+  python3-gobject \
+  gtk3 \
+  libappindicator-gtk3 \
+  webkit2gtk3
+```
+
+#### Arch Linux
+
+```bash
+sudo pacman -S --needed \
+  python-gobject \
+  gtk3 \
+  libappindicator-gtk3 \
+  webkit2gtk
+```
+
+Si la bandeja no aparece, normalmente falta AppIndicator/GTK en el sistema.
+
 `build_exe.bat` limpia automaticamente archivos temporales de build al finalizar:
 - `build/`
 - `BTCWidget.spec`

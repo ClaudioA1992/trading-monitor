@@ -9,19 +9,24 @@
   <body>
     <main class="widget">
       <header class="widget-header">
-        <h1>Monitor de Mercado</h1>
-        <p>CoinGecko API · refresh cada 5s</p>
+        <div class="header-top-row">
+          <h1 id="app-title">Monitor de Mercado</h1>
+          <button type="button" id="compact-toggle" class="compact-btn" aria-pressed="false">Compactar</button>
+        </div>
       </header>
 
-      <section class="asset-switcher" id="asset-switcher">
-        <button type="button" class="asset-btn active" data-asset="BTC/USD">BTC</button>
-        <button type="button" class="asset-btn" data-asset="ETH/USD">ETH</button>
-        <button type="button" class="asset-btn" data-asset="EUR/USD">EURUSD</button>
-        <button type="button" class="asset-btn" data-asset="XAU/USD">XAU</button>
-        <button type="button" class="asset-btn" data-asset="XAG/USD">XAG</button>
-      </section>
+      <div class="asset-switcher-wrap">
+        <section class="asset-switcher" id="asset-switcher">
+          <button type="button" class="asset-btn active" data-asset="BTC/USD">BTC</button>
+          <button type="button" class="asset-btn" data-asset="ETH/USD">ETH</button>
+          <button type="button" class="asset-btn" data-asset="EUR/USD">EURUSD</button>
+          <button type="button" class="asset-btn" data-asset="XAU/USD">XAU</button>
+          <button type="button" class="asset-btn" data-asset="XAG/USD">XAG</button>
+        </section>
+        <span class="switcher-hint" id="switcher-hint" aria-hidden="true">→</span>
+      </div>
 
-      <section class="asset-view">
+      <section class="asset-view" id="asset-view">
         <article class="hero-card">
           <h2 id="asset-symbol">BTC/USD</h2>
           <p class="hero-value" id="asset-price">--</p>
@@ -31,8 +36,8 @@
           </div>
         </article>
 
-        <article class="index-card">
-          <h3>Indices Relevantes</h3>
+        <article class="index-card" id="index-card">
+          <h3 id="indices-title">Indices Relevantes</h3>
           <div class="index-grid" id="asset-indices"></div>
         </article>
       </section>
@@ -43,7 +48,6 @@
 
       <footer class="widget-footer">
         <span id="status">Cargando...</span>
-        <span class="hint">Menu en bandeja: Mostrar o Salir</span>
       </footer>
     </main>
 

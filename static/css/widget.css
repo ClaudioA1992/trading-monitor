@@ -27,7 +27,7 @@ body {
 .widget {
   width: min(92vw, 430px);
   border-radius: 22px;
-  padding: 18px;
+  padding: 16px 16px 8px;
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(240, 248, 255, 0.88));
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(6px);
@@ -177,10 +177,19 @@ body {
 }
 
 .widget-footer {
-  margin-top: 12px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   font-size: 0.82rem;
   opacity: 0.75;
-  min-height: 1.2rem;
+  min-height: 1rem;
+}
+
+.hint {
+  font-size: 0.72rem;
+  opacity: 0.72;
 }
 
 .error {

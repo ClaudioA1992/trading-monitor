@@ -25,6 +25,39 @@ Fuente de datos: **CoinGecko API** (`/api/v3/coins/bitcoin/market_chart`).
 
 Para cerrar el widget: `Alt + F4`.
 
+## Modo user-friendly (sin programar)
+
+- El widget crea un icono en la bandeja del sistema (zona de iconos pequenos, cerca del reloj).
+- Desde ese icono puedes:
+  - `Mostrar widget`
+  - `Siempre al frente` (opcion nativa de Windows desde bandeja)
+  - `Salir` (cierra app completa)
+
+No necesitas abrir terminal para usarlo.
+
+## Generar EXE para Windows
+
+1. Doble clic en `build_exe.bat`
+2. Al terminar, abre: `dist/BTCWidget/BTCWidget.exe`
+
+Ese `.exe` incluye dependencias y no requiere instalar Python.
+
+## Build para Linux
+
+Si quieres binario Linux, debes compilar en Linux (build nativo):
+
+1. `chmod +x build_linux.sh`
+2. `./build_linux.sh`
+3. Binario generado en: `dist/BTCWidget/BTCWidget`
+
+Nota: Windows y Linux requieren builds separados.
+
+`build_exe.bat` limpia automaticamente archivos temporales de build al finalizar:
+- `build/`
+- `BTCWidget.spec`
+- `__pycache__/`
+- `*.pyc`
+
 ## Modo desarrollo
 
 Ejecuta `run_dev.bat` para correr la app en navegador durante desarrollo.

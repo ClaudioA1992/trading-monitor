@@ -1,0 +1,7 @@
+# Git ignore
+# Ignorar archivos compilados de Python y cachés
+*.pyc
+__pycache__/*
+btc_widget/__pycache__/*
+#Ignorar archivos de construcción de .exe
+dist/*

@@ -4,4 +4,4 @@
 __pycache__/*
 btc_widget/__pycache__/*
 #Ignorar archivos de construcción de .exe
-dist/*
+dist/

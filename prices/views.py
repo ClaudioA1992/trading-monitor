@@ -38,13 +38,19 @@ def quotes_api(request: HttpRequest):
         data = get_market_quotes(force_refresh=False)
         return JsonResponse({"ok": True, **data})
     except QuoteServiceError as exc:
+        language_data = _ui_text_payload()
         return JsonResponse(
             {
-                "ok": False,
+                "ok": True,
                 "error": str(exc),
-                **_ui_text_payload(),
+                "updated_at": 0,
+                "stale": True,
+                "retry_after_seconds": 60,
+                "assets": {},
+                "ticker": [],
+                **language_data,
             },
-            status=502,
+            status=200,
         )
 
 

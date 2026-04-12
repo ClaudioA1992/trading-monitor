@@ -1,7 +1,7 @@
 const API_URL = "/api/quotes/";
 const UI_TEXT_API_URL = "/api/ui-text/";
-const POLL_MS = 30000;
-const FULL_REFRESH_MS = 30000;
+const POLL_MS = 60000;
+const FULL_REFRESH_MS = 60000;
 const MAX_BACKOFF_MS = 30000;
 
 const statusEl = document.getElementById("status");
@@ -55,6 +55,28 @@ function setChangePill(el, label, value) {
   el.classList.remove("positive", "negative");
   if (value > 0) el.classList.add("positive");
   if (value < 0) el.classList.add("negative");
+}
+
+function formatAssetDisplay(asset) {
+  if (!asset || typeof asset.price !== "number" || !Number.isFinite(asset.price)) {
+    return asset?.display || "--";
+  }
+
+  const decimalsBySymbol = {
+    "BTC/USD": 2,
+    "ETH/USD": 2,
+    "EUR/USD": 5,
+    "XAU/USD": 2,
+    "XAG/USD": 3,
+  };
+
+  const decimals = decimalsBySymbol[asset.symbol] ?? 2;
+  const value = Number(asset.price).toLocaleString("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+
+  return asset.symbol === "EUR/USD" ? value : `$${value}`;
 }
 
 function localeFromLanguage(code) {
@@ -164,7 +186,7 @@ function renderAssetView(payload) {
   const asset = payload.assets[activeAsset];
 
   symbolEl.textContent = asset.symbol;
-  priceEl.textContent = asset.display;
+  priceEl.textContent = formatAssetDisplay(asset);
   setChangePill(change1hEl, uiText.lbl_1h || "1h", asset.change_1h_pct);
   setChangePill(change24hEl, uiText.lbl_24h || "24h", asset.change_24h_pct);
   renderIndices(asset.indices || []);

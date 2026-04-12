@@ -15,10 +15,10 @@ from .i18n import get_language, tr
 
 COINGECKO_URL = "https://api.coingecko.com/api/v3"
 REQUEST_TIMEOUT_SECONDS = 10
-CACHE_TTL_SECONDS = 0.0
-HISTORY_24H_CACHE_TTL_SECONDS = 300.0
-SPOT_CACHE_TTL_SECONDS = 0.0
-DEFAULT_RETRY_AFTER_SECONDS = 30
+CACHE_TTL_SECONDS = 60.0
+HISTORY_24H_CACHE_TTL_SECONDS = 1800.0
+SPOT_CACHE_TTL_SECONDS = 60.0
+DEFAULT_RETRY_AFTER_SECONDS = 120
 MAX_UPSTREAM_CALLS_PER_MINUTE = 10
 
 _cached_result: dict[str, Any] | None = None
@@ -144,6 +144,9 @@ def _get_cached_or_fetch_spot(now: float) -> dict[str, Decimal]:
         return _spot_cache
 
     if now < _next_allowed_spot_request_at:
+        # During local backoff, keep using the last known valid spot snapshot.
+        if _spot_cache:
+            return _spot_cache
         wait_seconds = max(int(_next_allowed_spot_request_at - now), 1)
         raise QuoteServiceError(f"Spot en backoff local ({wait_seconds}s).")
 
@@ -153,6 +156,7 @@ def _get_cached_or_fetch_spot(now: float) -> dict[str, Decimal]:
             {
                 "ids": "bitcoin,ethereum",
                 "vs_currencies": "usd,eur,xau,xag",
+                "precision": "full",
             },
         )
     except requests.HTTPError as exc:
@@ -164,6 +168,8 @@ def _get_cached_or_fetch_spot(now: float) -> dict[str, Decimal]:
             if retry_after_seconds is None:
                 retry_after_seconds = DEFAULT_RETRY_AFTER_SECONDS
             _next_allowed_spot_request_at = now + retry_after_seconds
+            if _spot_cache:
+                return _spot_cache
         raise
 
     btc = payload.get("bitcoin", {})
@@ -414,7 +420,6 @@ def get_market_quotes(force_refresh: bool = False) -> dict[str, Any]:
     now = time.time()
 
     if not force_refresh and _cached_result and (now - _cached_at) < CACHE_TTL_SECONDS:
-        print("[quotes] fast cache hit", flush=True)
         fast_copy = dict(_cached_result)
         fast_copy["language"] = language
         fast_copy["ui_text"] = _build_ui_text(language)
@@ -422,7 +427,6 @@ def get_market_quotes(force_refresh: bool = False) -> dict[str, Any]:
 
     if not force_refresh and _cached_result and now < _next_allowed_request_at:
         wait_seconds = max(int(_next_allowed_request_at - now), 1)
-        print(f"[quotes] backoff active, retry in {wait_seconds}s", flush=True)
         stale_result = dict(_cached_result)
         stale_result["stale"] = True
         stale_result["retry_after_seconds"] = wait_seconds
@@ -436,13 +440,17 @@ def get_market_quotes(force_refresh: bool = False) -> dict[str, Any]:
         spot: dict[str, Decimal] = {}
         try:
             spot = _get_cached_or_fetch_spot(now)
-        except (requests.RequestException, QuoteServiceError, ValueError, TypeError) as spot_exc:
-            print(f"[quotes] spot unavailable, fallback to history: {spot_exc}", flush=True)
+        except (requests.RequestException, QuoteServiceError, ValueError, TypeError):
+            pass
 
         def _latest_series(key: str) -> list[tuple[int, Decimal]]:
             base = history_24h[key]
             latest = spot.get(key)
             if latest is None or latest <= 0:
+                return base
+            # CoinGecko simple/price may return coarse integer USD spot values.
+            # Keep the high-resolution historical tail to avoid locking display at .00.
+            if key in {"btc_usd", "eth_usd"} and latest == latest.to_integral_value():
                 return base
             return _inject_latest_point(base, latest, now)
 
@@ -455,6 +463,8 @@ def get_market_quotes(force_refresh: bool = False) -> dict[str, Any]:
         eur_usd_24h = _derive_cross_series(btc_usd_24h, btc_eur_24h)
         xau_usd_24h = _derive_cross_series(btc_usd_24h, btc_xau_24h)
         xag_usd_24h = _derive_cross_series(btc_usd_24h, btc_xag_24h)
+        eth_btc_24h = _derive_cross_series(eth_usd_24h, btc_usd_24h)
+        xau_xag_24h = _derive_cross_series(xau_usd_24h, xag_usd_24h)
 
         assets: dict[str, dict[str, Any]] = {
             "BTC/USD": _build_asset_payload("BTC/USD", btc_usd_24h, 2, True, language),
@@ -467,8 +477,14 @@ def get_market_quotes(force_refresh: bool = False) -> dict[str, Any]:
         btc_eur = btc_eur_24h[-1][1]
         btc_xau = btc_xau_24h[-1][1]
         btc_xag = btc_xag_24h[-1][1]
-        eth_btc = assets["ETH/USD"]["price"] / assets["BTC/USD"]["price"]
-        gold_silver_ratio = assets["XAU/USD"]["price"] / assets["XAG/USD"]["price"]
+        eth_btc = eth_btc_24h[-1][1]
+        gold_silver_ratio = xau_xag_24h[-1][1]
+
+        btc_eur_24h_change = float(_round(_pct_change(btc_eur_24h[-1][1], btc_eur_24h[0][1]), 2))
+        eth_btc_24h_change = float(_round(_pct_change(eth_btc_24h[-1][1], eth_btc_24h[0][1]), 2))
+        btc_xau_24h_change = float(_round(_pct_change(btc_xau_24h[-1][1], btc_xau_24h[0][1]), 2))
+        btc_xag_24h_change = float(_round(_pct_change(btc_xag_24h[-1][1], btc_xag_24h[0][1]), 2))
+        xau_xag_24h_change = float(_round(_pct_change(xau_xag_24h[-1][1], xau_xag_24h[0][1]), 2))
 
         result: dict[str, Any] = {
             "updated_at": int(now),
@@ -496,31 +512,31 @@ def get_market_quotes(force_refresh: bool = False) -> dict[str, Any]:
                 {
                     "label": "BTC/EUR",
                     "value": f"€{_round(btc_eur, 2):,.2f}",
-                    "change_24h_pct": 0.0,
+                    "change_24h_pct": btc_eur_24h_change,
                 },
                 {
                     "label": "ETH/BTC",
-                    "value": f"{_round(_decimal(eth_btc), 5):,.5f}",
-                    "change_24h_pct": 0.0,
+                    "value": f"{_round(eth_btc, 5):,.5f}",
+                    "change_24h_pct": eth_btc_24h_change,
                 },
                 {
                     "label": "BTC/XAU",
                     "value": f"{_round(btc_xau, 3):,.3f}",
-                    "change_24h_pct": 0.0,
+                    "change_24h_pct": btc_xau_24h_change,
                 },
                 {
                     "label": "BTC/XAG",
                     "value": f"{_round(btc_xag, 3):,.3f}",
-                    "change_24h_pct": 0.0,
+                    "change_24h_pct": btc_xag_24h_change,
                 },
                 {
                     "label": "XAU/XAG",
-                    "value": f"{_round(_decimal(gold_silver_ratio), 2):,.2f}",
-                    "change_24h_pct": 0.0,
+                    "value": f"{_round(gold_silver_ratio, 2):,.2f}",
+                    "change_24h_pct": xau_xag_24h_change,
                 },
             ],
         }
-        print("[quotes] live data refreshed", flush=True)
+        print("[quotes] data refreshed", flush=True)
         _next_allowed_request_at = 0.0
     except (requests.RequestException, QuoteServiceError, ValueError, TypeError, ZeroDivisionError) as exc:
         retry_after_seconds: int | None = None
@@ -537,7 +553,7 @@ def get_market_quotes(force_refresh: bool = False) -> dict[str, Any]:
             _next_allowed_request_at = now + retry_after_seconds
 
         if _cached_result:
-            print(f"[quotes] upstream error, serving stale cache: {exc}", flush=True)
+            print("[quotes] upstream limited/unavailable, serving cached data", flush=True)
             stale_result = dict(_cached_result)
             stale_result["stale"] = True
             if retry_after_seconds is not None:
@@ -548,7 +564,7 @@ def get_market_quotes(force_refresh: bool = False) -> dict[str, Any]:
             stale_result["ui_text"] = _build_ui_text(language)
             return stale_result
         wait_seconds = max(int(_next_allowed_request_at - now), 1)
-        print(f"[quotes] upstream error without cache, serving degraded fallback: {exc}", flush=True)
+        print("[quotes] upstream limited/unavailable, serving degraded fallback", flush=True)
         fallback_result = _build_degraded_result(language, now, wait_seconds)
         _cached_result = dict(fallback_result)
         _cached_at = now

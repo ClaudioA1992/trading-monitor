@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Market Widget</title>
+    <link rel="stylesheet" href="/static/css/widget.css" />
+  </head>
+  <body>
+    <main class="widget">
+      <header class="widget-header">
+        <div class="header-top-row">
+          <h1 id="app-title">Monitor de Mercado</h1>
+          <button type="button" id="compact-toggle" class="compact-btn" aria-pressed="false">Compactar</button>
+        </div>
+      </header>
+
+      <div class="asset-switcher-wrap">
+        <section class="asset-switcher" id="asset-switcher">
+          <button type="button" class="asset-btn active" data-asset="BTC/USD">BTC</button>
+          <button type="button" class="asset-btn" data-asset="ETH/USD">ETH</button>
+          <button type="button" class="asset-btn" data-asset="EUR/USD">EURUSD</button>
+          <button type="button" class="asset-btn" data-asset="XAU/USD">XAU</button>
+          <button type="button" class="asset-btn" data-asset="XAG/USD">XAG</button>
+        </section>
+        <span class="switcher-hint" id="switcher-hint" aria-hidden="true">→</span>
+      </div>
+
+      <section class="asset-view" id="asset-view">
+        <article class="hero-card">
+          <h2 id="asset-symbol">BTC/USD</h2>
+          <p class="hero-value" id="asset-price">--</p>
+          <div class="hero-change-row">
+            <span class="pill" id="asset-1h">1h: --</span>
+            <span class="pill" id="asset-24h">24h: --</span>
+          </div>
+        </article>
+
+        <article class="index-card" id="index-card">
+          <h3 id="indices-title">Indices Relevantes</h3>
+          <div class="index-grid" id="asset-indices"></div>
+        </article>
+      </section>
+
+      <section class="ticker-wrap" aria-label="Ticker de mercado">
+        <div class="ticker-track" id="ticker-track"></div>
+      </section>
+
+      <footer class="widget-footer">
+        <span id="status">Cargando...</span>
+      </footer>
+    </main>
+
+    <script src="/static/js/widget.js"></script>
+  </body>
+</html>

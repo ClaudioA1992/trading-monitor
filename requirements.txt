@@ -1,0 +1,6 @@
+Django==5.2.1
+requests==2.32.3
+pywebview==5.1
+pystray==0.19.5
+Pillow==10.4.0
+pyinstaller==6.10.0
